@@ -8,7 +8,7 @@ const sentences = [
   { start: "Wake", end: "Up!", color: "bg-yellow-500" },
   { start: "Get", end: "Ready!", color: "bg-green-500" },
   { start: "Brush your", end: "teeth!", color: "bg-cyan-500" },
-  { start: "Pay", end: "Attention!", color: "bg-red-500" }
+  { start: "Pay", end: "Attention!", color: "bg-red-500" },
   { start: "Time for", end: "Recess", color: "bg-orange-500" }, // Adjusted prompt slightly
   { start: "Wash your", end: "hands!", color: "bg-purple-500" },
   { start: "Do your", end: "homework!", color: "bg-blue-500" },
