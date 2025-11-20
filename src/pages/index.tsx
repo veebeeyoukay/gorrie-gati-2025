@@ -65,6 +65,11 @@ export default function LandingPage() {
 
     // Teacher/Parent login
     if (isTeacherOrParent) {
+      if (!email) {
+        setError('Please enter your email address.');
+        return;
+      }
+
       if (isHCPSEmail(email)) {
         // Teacher login - no password required
         localStorage.setItem('gati_auth', 'teacher');
@@ -88,31 +93,27 @@ export default function LandingPage() {
         
         router.push('/dashboard');
       } else {
-        // Parent login - requires password
-        if (password === 'Password') {
-          localStorage.setItem('gati_auth', 'parent');
-          localStorage.setItem('gati_user_type', 'parent');
-          localStorage.setItem('gati_email', email);
-          
-          // Log login activity
-          try {
-            await fetch('/api/login-activity', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email,
-                userType: 'parent',
-                ipAddress
-              })
-            });
-          } catch (err) {
-            console.error("Failed to log activity", err);
-          }
-          
-          router.push('/dashboard');
-        } else {
-          setError('Invalid password. Please try again.');
+        // Parent login - no password required, just email
+        localStorage.setItem('gati_auth', 'parent');
+        localStorage.setItem('gati_user_type', 'parent');
+        localStorage.setItem('gati_email', email);
+        
+        // Log login activity
+        try {
+          await fetch('/api/login-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              userType: 'parent',
+              ipAddress
+            })
+          });
+        } catch (err) {
+          console.error("Failed to log activity", err);
         }
+        
+        router.push('/dashboard');
       }
     } else {
       setError('Please check the box if you are a teacher or parent.');
@@ -166,26 +167,15 @@ export default function LandingPage() {
               </Label>
             </div>
 
-            {isTeacherOrParent && !isHCPSEmail(email) && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="Enter password" 
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError('');
-                  }}
-                  className="border-gray-300 focus:border-red-500 focus:ring-red-500"
-                />
-              </div>
-            )}
-
             {isTeacherOrParent && isHCPSEmail(email) && (
               <p className="text-sm text-green-600 font-medium">
                 ✓ HCPS email detected. No password required for teachers.
+              </p>
+            )}
+
+            {isTeacherOrParent && !isHCPSEmail(email) && email && (
+              <p className="text-sm text-green-600 font-medium">
+                ✓ No password required for parents.
               </p>
             )}
 
