@@ -7,9 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Lock, ShieldCheck } from "lucide-react";
 
 export default function LandingPage() {
-  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isTeacherOrParent, setIsTeacherOrParent] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -24,9 +23,18 @@ export default function LandingPage() {
     return email.toLowerCase().endsWith('@hcps.net');
   };
 
+  const isVikasbhatiauk = (input: string) => {
+    return input.toLowerCase() === 'vikasbhatiauk';
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!usernameOrEmail.trim()) {
+      setError('Please enter your username or email address.');
+      return;
+    }
 
     // Get IP address for logging
     let ipAddress = 'unknown';
@@ -38,11 +46,16 @@ export default function LandingPage() {
       console.error("Failed to fetch IP", err);
     }
 
-    // Check if it's the original student login
-    if (!isTeacherOrParent && email === 'Vikasbhatiauk' && password === 'Password') {
+    // Check if it's Vikasbhatiauk - requires password
+    if (isVikasbhatiauk(usernameOrEmail)) {
+      if (password !== 'P@rsch3911') {
+        setError('Incorrect password. Please try again.');
+        return;
+      }
+      
       localStorage.setItem('gati_auth', 'true');
       localStorage.setItem('gati_user_type', 'student');
-      localStorage.setItem('gati_email', email);
+      localStorage.setItem('gati_email', usernameOrEmail);
       
       // Log login activity
       try {
@@ -50,7 +63,7 @@ export default function LandingPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email,
+            email: usernameOrEmail,
             userType: 'student',
             ipAddress
           })
@@ -63,61 +76,58 @@ export default function LandingPage() {
       return;
     }
 
-    // Teacher/Parent login
-    if (isTeacherOrParent) {
-      if (!email) {
-        setError('Please enter your email address.');
-        return;
+    // Check if it's a teacher (@hcps.net email) - no password required
+    if (isHCPSEmail(usernameOrEmail)) {
+      localStorage.setItem('gati_auth', 'teacher');
+      localStorage.setItem('gati_user_type', 'teacher');
+      localStorage.setItem('gati_email', usernameOrEmail);
+      
+      // Log login activity
+      try {
+        await fetch('/api/login-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: usernameOrEmail,
+            userType: 'teacher',
+            ipAddress
+          })
+        });
+      } catch (err) {
+        console.error("Failed to log activity", err);
       }
-
-      if (isHCPSEmail(email)) {
-        // Teacher login - no password required
-        localStorage.setItem('gati_auth', 'teacher');
-        localStorage.setItem('gati_user_type', 'teacher');
-        localStorage.setItem('gati_email', email);
-        
-        // Log login activity
-        try {
-          await fetch('/api/login-activity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              userType: 'teacher',
-              ipAddress
-            })
-          });
-        } catch (err) {
-          console.error("Failed to log activity", err);
-        }
-        
-        router.push('/dashboard');
-      } else {
-        // Parent login - no password required, just email
-        localStorage.setItem('gati_auth', 'parent');
-        localStorage.setItem('gati_user_type', 'parent');
-        localStorage.setItem('gati_email', email);
-        
-        // Log login activity
-        try {
-          await fetch('/api/login-activity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              userType: 'parent',
-              ipAddress
-            })
-          });
-        } catch (err) {
-          console.error("Failed to log activity", err);
-        }
-        
-        router.push('/dashboard');
-      }
-    } else {
-      setError('Please check the box if you are a teacher or parent.');
+      
+      router.push('/dashboard');
+      return;
     }
+
+    // Otherwise, it's a parent - no password required, just email
+    // Validate that it looks like an email
+    if (!usernameOrEmail.includes('@')) {
+      setError('Please enter a valid email address for parent access.');
+      return;
+    }
+
+    localStorage.setItem('gati_auth', 'parent');
+    localStorage.setItem('gati_user_type', 'parent');
+    localStorage.setItem('gati_email', usernameOrEmail);
+    
+    // Log login activity
+    try {
+      await fetch('/api/login-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: usernameOrEmail,
+          userType: 'parent',
+          ipAddress
+        })
+      });
+    } catch (err) {
+      console.error("Failed to log activity", err);
+    }
+    
+    router.push('/dashboard');
   };
 
   return (
@@ -137,43 +147,44 @@ export default function LandingPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="usernameOrEmail">Username / Email</Label>
               <Input 
-                id="email" 
-                type="email"
-                placeholder="Enter your email" 
-                value={email}
+                id="usernameOrEmail" 
+                type="text"
+                placeholder="Enter username or email" 
+                value={usernameOrEmail}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setUsernameOrEmail(e.target.value);
                   setError('');
                 }}
                 className="border-gray-300 focus:border-red-500 focus:ring-red-500"
               />
             </div>
             
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="teacherParent"
-                checked={isTeacherOrParent}
-                onChange={(e) => {
-                  setIsTeacherOrParent(e.target.checked);
-                  setError('');
-                }}
-                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-              />
-              <Label htmlFor="teacherParent" className="text-sm font-normal cursor-pointer">
-                I am a teacher or parent.
-              </Label>
-            </div>
+            {isVikasbhatiauk(usernameOrEmail) && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password"
+                  placeholder="Enter password" 
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                />
+              </div>
+            )}
 
-            {isTeacherOrParent && isHCPSEmail(email) && (
+            {isHCPSEmail(usernameOrEmail) && (
               <p className="text-sm text-green-600 font-medium">
                 ✓ HCPS email detected. No password required for teachers.
               </p>
             )}
 
-            {isTeacherOrParent && !isHCPSEmail(email) && email && (
+            {usernameOrEmail && !isVikasbhatiauk(usernameOrEmail) && !isHCPSEmail(usernameOrEmail) && usernameOrEmail.includes('@') && (
               <p className="text-sm text-green-600 font-medium">
                 ✓ No password required for parents.
               </p>
