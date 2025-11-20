@@ -7,25 +7,115 @@ import { Label } from "@/components/ui/label";
 import { Lock, ShieldCheck } from "lucide-react";
 
 export default function LandingPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isTeacherOrParent, setIsTeacherOrParent] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('gati_auth');
-    if (isAuthenticated === 'true') {
+    if (isAuthenticated === 'true' || isAuthenticated === 'teacher' || isAuthenticated === 'parent') {
       router.push('/dashboard');
     }
   }, [router]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const isHCPSEmail = (email: string) => {
+    return email.toLowerCase().endsWith('@hcps.net');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'Vikasbhatiauk' && password === 'Password') {
+    setError('');
+
+    // Get IP address for logging
+    let ipAddress = 'unknown';
+    try {
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      ipAddress = ipData.ip;
+    } catch (err) {
+      console.error("Failed to fetch IP", err);
+    }
+
+    // Check if it's the original student login
+    if (!isTeacherOrParent && email === 'Vikasbhatiauk' && password === 'Password') {
       localStorage.setItem('gati_auth', 'true');
+      localStorage.setItem('gati_user_type', 'student');
+      localStorage.setItem('gati_email', email);
+      
+      // Log login activity
+      try {
+        await fetch('/api/login-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            userType: 'student',
+            ipAddress
+          })
+        });
+      } catch (err) {
+        console.error("Failed to log activity", err);
+      }
+      
       router.push('/dashboard');
+      return;
+    }
+
+    // Teacher/Parent login
+    if (isTeacherOrParent) {
+      if (isHCPSEmail(email)) {
+        // Teacher login - no password required
+        localStorage.setItem('gati_auth', 'teacher');
+        localStorage.setItem('gati_user_type', 'teacher');
+        localStorage.setItem('gati_email', email);
+        
+        // Log login activity
+        try {
+          await fetch('/api/login-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              userType: 'teacher',
+              ipAddress
+            })
+          });
+        } catch (err) {
+          console.error("Failed to log activity", err);
+        }
+        
+        router.push('/dashboard');
+      } else {
+        // Parent login - requires password
+        if (password === 'Password') {
+          localStorage.setItem('gati_auth', 'parent');
+          localStorage.setItem('gati_user_type', 'parent');
+          localStorage.setItem('gati_email', email);
+          
+          // Log login activity
+          try {
+            await fetch('/api/login-activity', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                userType: 'parent',
+                ipAddress
+              })
+            });
+          } catch (err) {
+            console.error("Failed to log activity", err);
+          }
+          
+          router.push('/dashboard');
+        } else {
+          setError('Invalid password. Please try again.');
+        }
+      }
     } else {
-      setError('Invalid credentials. Please try again.');
+      setError('Please check the box if you are a teacher or parent.');
     }
   };
 
@@ -46,26 +136,59 @@ export default function LandingPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input 
-                id="username" 
-                placeholder="Enter username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email" 
+                type="email"
+                placeholder="Enter your email" 
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
                 className="border-gray-300 focus:border-red-500 focus:ring-red-500"
               />
-        </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="Enter password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="teacherParent"
+                checked={isTeacherOrParent}
+                onChange={(e) => {
+                  setIsTeacherOrParent(e.target.checked);
+                  setError('');
+                }}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
               />
-        </div>
+              <Label htmlFor="teacherParent" className="text-sm font-normal cursor-pointer">
+                I am a teacher or parent.
+              </Label>
+            </div>
+
+            {isTeacherOrParent && !isHCPSEmail(email) && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="Enter password" 
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                />
+              </div>
+            )}
+
+            {isTeacherOrParent && isHCPSEmail(email) && (
+              <p className="text-sm text-green-600 font-medium">
+                ✓ HCPS email detected. No password required for teachers.
+              </p>
+            )}
+
             {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
             <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2">
               <Lock className="w-4 h-4 mr-2" />

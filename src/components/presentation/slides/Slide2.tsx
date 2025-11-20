@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
 
 const sentences = [
-  { start: "6", end: "7!", color: "bg-blue-500" },
+  { start: "6", end: "6-7!", color: "bg-blue-500" },
   { start: "Wake", end: "Up!", color: "bg-yellow-500" },
   { start: "Get", end: "Ready!", color: "bg-green-500" },
   { start: "Brush your", end: "teeth!", color: "bg-cyan-500" },

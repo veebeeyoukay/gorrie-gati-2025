@@ -6,15 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { BarChart, Users, Mail, MessageSquare, Download, Home, PieChart } from 'lucide-react';
+import { BarChart, Users, Mail, MessageSquare, Download, Home, PieChart, LogIn } from 'lucide-react';
 
 const ADMIN_PIN = '150975';
+
+interface LoginActivity {
+  id: string;
+  email: string;
+  userType: 'teacher' | 'parent' | 'student';
+  timestamp: string;
+  ipAddress?: string;
+}
 
 export default function AdminPage() {
   const router = useRouter();
   const [qrUrl, setQrUrl] = useState('https://vikasbhatia.info/projects/');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pollData, setPollData] = useState<{yes: number, no: number}>({ yes: 0, no: 0 });
+  const [loginActivity, setLoginActivity] = useState<LoginActivity[]>([]);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   const [userIp, setUserIp] = useState<string>('');
@@ -28,6 +37,12 @@ export default function AdminPage() {
         .then(res => res.json())
         .then(data => setPollData(data))
         .catch(err => console.error("Failed to load poll data", err));
+      
+      // Fetch login activity
+      fetch('/api/login-activity')
+        .then(res => res.json())
+        .then(data => setLoginActivity(data))
+        .catch(err => console.error("Failed to load login activity", err));
     }
   }, []);
 
@@ -157,6 +172,7 @@ export default function AdminPage() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="poll">Poll Results</TabsTrigger>
+            <TabsTrigger value="login-activity">Login Activity</TabsTrigger>
             <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
             <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
             <TabsTrigger value="qr">QR Generator</TabsTrigger>
@@ -236,6 +252,56 @@ export default function AdminPage() {
                  <div className="mt-8 text-center text-gray-500">
                    Question: "Who has used Siri, Alexa, or Google Assistant?"
                  </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Login Activity Tab */}
+          <TabsContent value="login-activity">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LogIn className="w-5 h-5" /> Login Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <div className="grid grid-cols-4 p-4 border-b bg-gray-50 font-bold">
+                    <div>Email</div>
+                    <div>User Type</div>
+                    <div>IP Address</div>
+                    <div>Timestamp</div>
+                  </div>
+                  {loginActivity.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      No login activity recorded yet.
+                    </div>
+                  ) : (
+                    loginActivity.slice().reverse().map((activity) => (
+                      <div key={activity.id} className="grid grid-cols-4 p-4 border-b hover:bg-gray-50">
+                        <div className="font-medium">{activity.email}</div>
+                        <div>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            activity.userType === 'teacher' ? 'bg-blue-100 text-blue-800' :
+                            activity.userType === 'parent' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {activity.userType.charAt(0).toUpperCase() + activity.userType.slice(1)}
+                          </span>
+                        </div>
+                        <div className="font-mono text-sm text-gray-600">{activity.ipAddress || 'N/A'}</div>
+                        <div className="text-sm text-gray-600">
+                          {new Date(activity.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {loginActivity.length > 0 && (
+                  <div className="mt-4 text-sm text-gray-500">
+                    Total logins: {loginActivity.length}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

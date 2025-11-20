@@ -10,27 +10,44 @@ export default function Dashboard() {
   const router = useRouter();
   const [gradeLevel, setGradeLevel] = useState<'2nd' | '4th' | null>(null);
   const [audience, setAudience] = useState<'student' | 'parent' | 'teacher' | null>(null);
+  const [userType, setUserType] = useState<'student' | 'teacher' | 'parent' | null>(null);
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('gati_auth');
+    const storedUserType = localStorage.getItem('gati_user_type') as 'student' | 'teacher' | 'parent' | null;
+    
     if (!isAuthenticated) {
       router.push('/');
+    } else {
+      setUserType(storedUserType || 'student');
+      
+      // Auto-set audience for teachers and parents
+      if (storedUserType === 'teacher') {
+        setAudience('teacher');
+      } else if (storedUserType === 'parent') {
+        setAudience('parent');
+      }
     }
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('gati_auth');
+    localStorage.removeItem('gati_user_type');
+    localStorage.removeItem('gati_email');
     router.push('/');
   };
 
   const navigateTo = (path: string) => {
-    if (gradeLevel && audience) {
-       // Store selections in query or local storage
-       localStorage.setItem('gati_grade', gradeLevel);
-       localStorage.setItem('gati_audience', audience);
-       router.push(path);
-    } else if (path === '/admin' || path === '/resources' || path === '/handouts') {
-       router.push(path); // These might not need grade selection
+    // For students, require grade and audience selection
+    if (userType === 'student') {
+      if (gradeLevel && audience) {
+        localStorage.setItem('gati_grade', gradeLevel);
+        localStorage.setItem('gati_audience', audience);
+        router.push(path);
+      }
+    } else {
+      // For teachers and parents, navigate directly
+      router.push(path);
     }
   };
 
@@ -56,66 +73,91 @@ export default function Dashboard() {
 
       <main className="max-w-6xl mx-auto space-y-8">
         
-        {/* Selection Section */}
-        <section className="space-y-4">
-           <h2 className="text-xl font-semibold text-gray-800">1. Select Audience & Grade</h2>
-           <div className="grid md:grid-cols-2 gap-6">
-              <Card className="border-l-4 border-l-red-500">
-                 <CardHeader>
-                   <CardTitle className="flex items-center gap-2"><School className="w-5 h-5" /> Grade Level</CardTitle>
-                 </CardHeader>
-                 <CardContent className="flex gap-4">
-                    <Button 
-                      onClick={() => setGradeLevel('2nd')} 
-                      variant={gradeLevel === '2nd' ? 'default' : 'outline'}
-                      className="flex-1"
-                    >
-                      2nd Grade
-                    </Button>
-                    <Button 
-                      onClick={() => setGradeLevel('4th')} 
-                      variant={gradeLevel === '4th' ? 'default' : 'outline'}
-                      className="flex-1"
-                    >
-                      4th Grade
-                    </Button>
-                 </CardContent>
-              </Card>
+        {/* Selection Section - Only show for students */}
+        {userType === 'student' && (
+          <section className="space-y-4">
+             <h2 className="text-xl font-semibold text-gray-800">1. Select Audience & Grade</h2>
+             <div className="grid md:grid-cols-2 gap-6">
+                <Card className="border-l-4 border-l-red-500">
+                   <CardHeader>
+                     <CardTitle className="flex items-center gap-2"><School className="w-5 h-5" /> Grade Level</CardTitle>
+                   </CardHeader>
+                   <CardContent className="flex gap-4">
+                      <Button 
+                        onClick={() => setGradeLevel('2nd')} 
+                        variant={gradeLevel === '2nd' ? 'default' : 'outline'}
+                        className="flex-1"
+                      >
+                        2nd Grade
+                      </Button>
+                      <Button 
+                        onClick={() => setGradeLevel('4th')} 
+                        variant={gradeLevel === '4th' ? 'default' : 'outline'}
+                        className="flex-1"
+                      >
+                        4th Grade
+                      </Button>
+                   </CardContent>
+                </Card>
 
-              <Card className="border-l-4 border-l-orange-500">
-                 <CardHeader>
-                   <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Audience Type</CardTitle>
-                 </CardHeader>
-                 <CardContent className="flex gap-4">
-                    <Button 
-                      onClick={() => setAudience('student')} 
-                      variant={audience === 'student' ? 'default' : 'outline'}
-                      className="flex-1"
-                    >
-                      Student
-                    </Button>
-                    <Button 
-                      onClick={() => setAudience('parent')} 
-                      variant={audience === 'parent' ? 'default' : 'outline'}
-                      className="flex-1"
-                    >
-                      Parent
-                    </Button>
-                    <Button 
-                      onClick={() => setAudience('teacher')} 
-                      variant={audience === 'teacher' ? 'default' : 'outline'}
-                      className="flex-1"
-                    >
-                      Teacher
-                    </Button>
-                 </CardContent>
-              </Card>
-           </div>
-        </section>
+                <Card className="border-l-4 border-l-orange-500">
+                   <CardHeader>
+                     <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Audience Type</CardTitle>
+                   </CardHeader>
+                   <CardContent className="flex gap-4">
+                      <Button 
+                        onClick={() => setAudience('student')} 
+                        variant={audience === 'student' ? 'default' : 'outline'}
+                        className="flex-1"
+                      >
+                        Student
+                      </Button>
+                      <Button 
+                        onClick={() => setAudience('parent')} 
+                        variant={audience === 'parent' ? 'default' : 'outline'}
+                        className="flex-1"
+                      >
+                        Parent
+                      </Button>
+                      <Button 
+                        onClick={() => setAudience('teacher')} 
+                        variant={audience === 'teacher' ? 'default' : 'outline'}
+                        className="flex-1"
+                      >
+                        Teacher
+                      </Button>
+                   </CardContent>
+                </Card>
+             </div>
+          </section>
+        )}
+
+        {/* Welcome message for teachers and parents */}
+        {(userType === 'teacher' || userType === 'parent') && (
+          <section className="space-y-4">
+            <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200">
+              <CardHeader>
+                <CardTitle className="text-2xl">
+                  Welcome, {userType === 'teacher' ? 'Teacher' : 'Parent'}! 👋
+                </CardTitle>
+                <CardDescription>
+                  {userType === 'teacher' 
+                    ? 'Access all resources for students, parents, and teachers.'
+                    : 'Access parent resources and the presentation.'}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </section>
+        )}
 
         {/* Modules Section */}
-        <section className={cn("space-y-4 transition-opacity", (!gradeLevel || !audience) && "opacity-50 pointer-events-none")}>
-           <h2 className="text-xl font-semibold text-gray-800">2. Launch Module</h2>
+        <section className={cn(
+          "space-y-4 transition-opacity",
+          userType === 'student' && (!gradeLevel || !audience) && "opacity-50 pointer-events-none"
+        )}>
+           <h2 className="text-xl font-semibold text-gray-800">
+             {userType === 'student' ? '2. Launch Module' : 'Available Resources'}
+           </h2>
            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               
               <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigateTo('/presentation')}>
@@ -129,16 +171,18 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigateTo('/demo')}>
-                <CardHeader className="bg-blue-50 group-hover:bg-blue-100 transition-colors">
-                  <MessageSquare className="w-8 h-8 text-blue-600 mb-2" />
-                  <CardTitle>AI Chat Demo</CardTitle>
-                  <CardDescription>Live Claude/Gemini Chat</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4">
-                   <p className="text-sm text-gray-600">Safe, kid-friendly chat interface to experience AI.</p>
-                </CardContent>
-              </Card>
+              {(userType === 'student' || userType === 'teacher') && (
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigateTo('/demo')}>
+                  <CardHeader className="bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                    <MessageSquare className="w-8 h-8 text-blue-600 mb-2" />
+                    <CardTitle>AI Chat Demo</CardTitle>
+                    <CardDescription>Live Claude/Gemini Chat</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                     <p className="text-sm text-gray-600">Safe, kid-friendly chat interface to experience AI.</p>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={() => navigateTo('/resources')}>
                 <CardHeader className="bg-orange-50 group-hover:bg-orange-100 transition-colors">
@@ -168,9 +212,11 @@ export default function Dashboard() {
         {/* Admin Footer */}
         <footer className="pt-8 border-t border-gray-200 flex justify-between items-center">
            <p className="text-sm text-gray-500">© 2025 Vikas Bhatia Consulting</p>
-           <Button variant="link" size="sm" className="text-gray-400 hover:text-gray-600" onClick={() => router.push('/admin')}>
-             <Settings className="w-4 h-4 mr-1" /> Admin Dashboard
-           </Button>
+           {userType === 'student' && (
+             <Button variant="link" size="sm" className="text-gray-400 hover:text-gray-600" onClick={() => router.push('/admin')}>
+               <Settings className="w-4 h-4 mr-1" /> Admin Dashboard
+             </Button>
+           )}
         </footer>
 
       </main>
