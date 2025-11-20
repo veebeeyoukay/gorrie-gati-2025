@@ -181,7 +181,7 @@ export default function ResourcesPage() {
           <TabsContent value="consulting">
              <Card className="border-orange-200 bg-orange-50/50 overflow-hidden">
                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                 HIRE ME
+                 Want to work with me? Reach out!
                </div>
                <CardContent className="p-8 md:p-12">
                   <div className="flex flex-col md:flex-row gap-8 items-center">

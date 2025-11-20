@@ -8,17 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BarChart, Users, Mail, MessageSquare, Download, Home, PieChart } from 'lucide-react';
 
+const ADMIN_PIN = '150975';
+
 export default function AdminPage() {
   const router = useRouter();
   const [qrUrl, setQrUrl] = useState('https://vikasbhatia.info/ai/resources');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pollData, setPollData] = useState<{yes: number, no: number}>({ yes: 0, no: 0 });
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [userIp, setUserIp] = useState<string>('');
 
   useEffect(() => {
     const auth = localStorage.getItem('gati_auth');
-    if (!auth) {
-      router.push('/');
-    } else {
+    if (auth === 'authenticated') {
       setIsAuthenticated(true);
       // Fetch poll data
       fetch('/api/poll')
@@ -26,7 +29,44 @@ export default function AdminPage() {
         .then(data => setPollData(data))
         .catch(err => console.error("Failed to load poll data", err));
     }
-  }, [router]);
+  }, []);
+
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === ADMIN_PIN) {
+      setIsAuthenticated(true);
+      localStorage.setItem('gati_auth', 'authenticated');
+      setPinError('');
+      setUserIp('');
+      // Fetch poll data
+      fetch('/api/poll')
+        .then(res => res.json())
+        .then(data => setPollData(data))
+        .catch(err => console.error("Failed to load poll data", err));
+    } else {
+      // Fetch IP address
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        setUserIp(ipData.ip);
+      } catch (err) {
+        console.error("Failed to fetch IP", err);
+        setUserIp('Unable to retrieve');
+      }
+      
+      // Request camera permission
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        // Don't do anything with the stream, just let them dismiss it
+      } catch (err) {
+        // User denied or error occurred - that's fine, we just wanted to prompt
+        console.log("Camera permission denied or error:", err);
+      }
+      
+      setPinError('Did you know that Vikas is a CyberSecurity expert??....');
+      setPin('');
+    }
+  };
 
   const downloadQR = () => {
     const svg = document.getElementById("qr-code-svg");
@@ -49,7 +89,55 @@ export default function AdminPage() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center font-sans">
+        <Head>
+          <title>Admin Login - Gorrie Admin</title>
+        </Head>
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Admin Access</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePinSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter PIN
+                </label>
+                <Input
+                  id="pin"
+                  type="password"
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value);
+                    setPinError('');
+                    setUserIp('');
+                  }}
+                  placeholder="Enter PIN"
+                  className="w-full"
+                  autoFocus
+                />
+                {pinError && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm text-red-600 font-semibold">{pinError}</p>
+                    {userIp && (
+                      <p className="text-xs text-gray-600">
+                        Your IP Address: <span className="font-mono font-semibold">{userIp}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <Button type="submit" className="w-full">
+                Access Admin Dashboard
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
