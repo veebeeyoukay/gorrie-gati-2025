@@ -7,11 +7,13 @@ const sentences = [
   { start: "6", end: "7!", color: "bg-blue-500" },
   { start: "Wake", end: "Up!", color: "bg-yellow-500" },
   { start: "Get", end: "Ready!", color: "bg-green-500" },
-  { start: "Pay", end: "Attention!", color: "bg-red-500" }, // Adjusted prompt slightly
-  { start: "Fort", end: "nite!", color: "bg-purple-500" },
-  { start: "Among", end: "Us!", color: "bg-yellow-500" },
-  { start: "Do your", end: "homework!", color: "bg-blue-500" },
   { start: "Brush your", end: "teeth!", color: "bg-cyan-500" },
+  { start: "Pay", end: "Attention!", color: "bg-red-500" }
+  { start: "Time for", end: "Recess", color: "bg-orange-500" }, // Adjusted prompt slightly
+  { start: "Wash your", end: "hands!", color: "bg-purple-500" },
+  { start: "Do your", end: "homework!", color: "bg-blue-500" },
+  { start: "Its time for", end: "bed! zzzzz", color: "bg-pink-500" },
+
 ];
 
 export const Slide2 = () => {
