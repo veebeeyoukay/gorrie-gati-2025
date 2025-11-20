@@ -7,6 +7,7 @@ import { usePresentationMode } from '@/lib/usePresentationMode';
 export const Slide1 = () => {
   const [votes, setVotes] = useState(15);
   const [hasVoted, setHasVoted] = useState(false);
+  const [selectedResponse, setSelectedResponse] = useState<'few' | 'half' | 'most' | null>(null);
   const [mode, setMode] = useState<string>("");
   const { grade, audience } = usePresentationMode();
 
@@ -28,26 +29,38 @@ export const Slide1 = () => {
     }
   }, []);
 
-  const handleVote = async () => {
-    if (!hasVoted) {
-      setHasVoted(true);
-      // Optimistic update
-      setVotes(prev => prev + 1);
+  const handleResponseClick = async (response: 'few' | 'half' | 'most') => {
+    setSelectedResponse(response);
+    setHasVoted(true);
+    // Optimistic update
+    setVotes(prev => prev + 1);
 
-      try {
-        await fetch('/api/poll', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pollId: 'slide1-usage',
-            option: 'yes',
-            grade,
-            audience
-          })
-        });
-      } catch (error) {
-        console.error("Vote failed", error);
-      }
+    try {
+      await fetch('/api/poll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pollId: 'slide1-usage',
+          option: 'yes',
+          grade,
+          audience
+        })
+      });
+    } catch (error) {
+      console.error("Vote failed", error);
+    }
+  };
+
+  const getResponseMessage = (): string => {
+    switch (selectedResponse) {
+      case 'few':
+        return "That's okay! Today we're going to learn all about how AI works - you'll be an expert by the end!";
+      case 'half':
+        return "Great! You're already familiar with AI. Let's discover how these smart helpers actually work!";
+      case 'most':
+        return "Awesome! You've already used AI. Now let's learn the cool secrets behind how it thinks and learns!";
+      default:
+        return '';
     }
   };
 
@@ -89,29 +102,47 @@ export const Slide1 = () => {
           </motion.div>
         </div>
 
-        <Button 
-          size="xl" 
-          onClick={handleVote} 
-          disabled={hasVoted}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold text-xl rounded-full px-12 py-6 shadow-lg transform transition hover:scale-105"
-        >
-          {hasVoted ? "Thanks!" : "I have! 🙋‍♂️"}
-        </Button>
-        
-        {hasVoted && (
-          <motion.p 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="mt-4 text-2xl font-bold text-orange-600"
+        {!hasVoted ? (
+          <div className="flex gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={() => handleResponseClick('few')}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-lg rounded-full px-8 py-4 shadow-lg transform transition hover:scale-105"
+            >
+              A few
+            </Button>
+            <Button 
+              size="lg" 
+              onClick={() => handleResponseClick('half')}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-lg rounded-full px-8 py-4 shadow-lg transform transition hover:scale-105"
+            >
+              About half
+            </Button>
+            <Button 
+              size="lg" 
+              onClick={() => handleResponseClick('most')}
+              className="bg-green-500 hover:bg-green-600 text-white font-bold text-lg rounded-full px-8 py-4 shadow-lg transform transition hover:scale-105"
+            >
+              Most
+            </Button>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-6"
           >
-            Wow! {votes} students use AI!
-          </motion.p>
+            <p className="text-xl font-semibold text-gray-800 mb-2">
+              {getResponseMessage()}
+            </p>
+          </motion.div>
         )}
       </motion.div>
       
       {/* Jaguar Mascot Decoration */}
       <motion.img 
-        src="/images/jaguar-mascot.svg" 
+        src="/images/gorrie_Logo.png" 
         alt="Gorrie Jaguar" 
         className="absolute bottom-0 right-0 w-48 h-48 opacity-20 pointer-events-none"
         animate={{ y: [0, -10, 0] }}

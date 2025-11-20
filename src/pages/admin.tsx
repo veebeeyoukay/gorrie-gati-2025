@@ -12,7 +12,7 @@ const ADMIN_PIN = '150975';
 
 export default function AdminPage() {
   const router = useRouter();
-  const [qrUrl, setQrUrl] = useState('https://vikasbhatia.info/projects/resources');
+  const [qrUrl, setQrUrl] = useState('https://vikasbhatia.info/projects/');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pollData, setPollData] = useState<{yes: number, no: number}>({ yes: 0, no: 0 });
   const [pin, setPin] = useState('');

@@ -56,7 +56,7 @@ const CombinedHandoutContent = React.forwardRef<HTMLDivElement>((props, ref) => 
       <div className="mt-4 pt-4 border-t flex justify-between items-end">
         <div>
           <p className="font-bold mb-2 text-sm">Parents: Scan for resources (see back)</p>
-          <QRCodeSVG value="https://vikasbhatia.info/ai/resources" size={80} />
+          <QRCodeSVG value="https://vikasbhatia.info/projects" size={80} />
         </div>
         <div className="text-right">
           <p className="font-bold text-gray-800 text-sm">Vikas Bhatia Consulting</p>
@@ -112,7 +112,7 @@ const CombinedHandoutContent = React.forwardRef<HTMLDivElement>((props, ref) => 
              <p className="text-gray-400 text-xs">Scan to view safety guides, tools list, and more.</p>
            </div>
            <div className="p-2 bg-white rounded">
-              <QRCodeSVG value="https://vikasbhatia.info/ai/resources" size={70} />
+              <QRCodeSVG value="https://vikasbhatia.info/projects" size={70} />
            </div>
         </div>
 
@@ -163,7 +163,7 @@ const StudentPreview = () => (
     <div className="mt-auto pt-6 border-t flex justify-between items-end">
       <div>
         <p className="font-bold mb-2">Parents: Scan for resources (see back)</p>
-        <QRCodeSVG value="https://vikasbhatia.info/ai/resources" size={96} />
+        <QRCodeSVG value="https://vikasbhatia.info/projects" size={96} />
       </div>
       <div className="text-right">
         <p className="font-bold text-gray-800">Vikas Bhatia Consulting</p>
@@ -213,7 +213,7 @@ const ParentPreview = () => (
            <p className="text-gray-400 text-sm">Scan to view safety guides, tools list, and more.</p>
          </div>
          <div className="p-2 bg-white rounded">
-            <QRCodeSVG value="https://vikasbhatia.info/ai/resources" size={80} />
+            <QRCodeSVG value="https://vikasbhatia.info/projects" size={80} />
          </div>
       </div>
     </div>
